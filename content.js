@@ -138,8 +138,117 @@
         initializeRightClickEnabler();
     }
 
-    // 동적으로 추가되는 요소들을 위해 주기적으로 실행
-    setInterval(initializeRightClickEnabler, 1000);
+    // DOM 변화 감시로 지속적 해제 (더 효율적)
+    let isObserverActive = true;
+    const observer = new MutationObserver(function(mutations) {
+        if (!isObserverActive) return;
+        
+        mutations.forEach(function(mutation) {
+            // 새로 추가된 노드들 처리
+            mutation.addedNodes.forEach(function(node) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    // 새 요소의 이벤트 핸들러 제거
+                    node.oncontextmenu = null;
+                    node.onselectstart = null;
+                    node.ondragstart = null;
+                    
+                    // 하위 요소들도 처리
+                    const elements = node.querySelectorAll('*');
+                    elements.forEach(el => {
+                        el.oncontextmenu = null;
+                        el.onselectstart = null;
+                        el.ondragstart = null;
+                    });
+                    
+                    console.log(`${frameInfo}: 새 요소 감지 및 해제 완료`);
+                }
+            });
+        });
+    });
+    
+    // DOM 관찰 시작
+    observer.observe(document, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['oncontextmenu', 'onselectstart', 'ondragstart', 'style']
+    });
+    
+    // 기존 방법도 백업으로 유지 (덜 자주)
+    setInterval(initializeRightClickEnabler, 3000);
+
+    // 네이버 블로그 전용 우회 방법
+    function naverBlogBypass() {
+        console.log(`${frameInfo}: 네이버 블로그 특별 공격 시작!`);
+        
+        // 네이버 특수 변수들 무력화
+        try {
+            if (window.oFramesetTitleController) {
+                window.oFramesetTitleController = null;
+            }
+            if (window.oFramesetUrlController) {
+                window.oFramesetUrlController = null;
+            }
+        } catch(e) {}
+        
+        // iframe 직접 접근 시도
+        const mainFrame = document.getElementById('mainFrame');
+        if (mainFrame) {
+            try {
+                // iframe 내부 문서 직접 조작
+                const iframeDoc = mainFrame.contentDocument || mainFrame.contentWindow.document;
+                if (iframeDoc) {
+                    iframeDoc.oncontextmenu = null;
+                    iframeDoc.onselectstart = null;
+                    iframeDoc.ondragstart = null;
+                    
+                    // iframe CSS 강제 적용
+                    const iframeStyle = iframeDoc.createElement('style');
+                    iframeStyle.innerHTML = `
+                        * { 
+                            user-select: text !important; 
+                            -webkit-user-select: text !important;
+                            -moz-user-select: text !important;
+                            pointer-events: auto !important;
+                        }
+                        body { user-select: text !important; }
+                    `;
+                    iframeDoc.head.appendChild(iframeStyle);
+                    
+                    console.log(`${frameInfo}: 네이버 iframe 내부 조작 성공!`);
+                }
+            } catch(e) {
+                console.log(`${frameInfo}: 네이버 iframe 접근 실패, postMessage 시도`);
+                // postMessage로 시도
+                mainFrame.contentWindow.postMessage({
+                    type: 'NAVER_BYPASS',
+                    code: `
+                        document.oncontextmenu = null;
+                        document.onselectstart = null;
+                        document.querySelectorAll('*').forEach(el => {
+                            el.oncontextmenu = null;
+                            el.onselectstart = null;
+                            el.style.userSelect = 'text';
+                            el.style.webkitUserSelect = 'text';
+                        });
+                        const style = document.createElement('style');
+                        style.innerHTML = '* { user-select: text !important; }';
+                        document.head.appendChild(style);
+                    `
+                }, '*');
+            }
+        }
+        
+        // 네이버 전용 폭력적 방법
+        setTimeout(() => {
+            document.querySelectorAll('iframe').forEach(iframe => {
+                iframe.style.pointerEvents = 'auto';
+                iframe.style.userSelect = 'text';
+                iframe.setAttribute('allowfullscreen', 'true');
+                iframe.removeAttribute('sandbox');
+            });
+        }, 500);
+    }
 
     // iframe들에게 최종병기 명령 전파
     function propagateNuclearToIframes() {
@@ -157,23 +266,48 @@
         });
     }
     
-    // 최종병기: JavaScript 엔진 중단
+    // 최종병기: JavaScript 엔진 중단 (업그레이드 버전)
     function nuclearOption() {
         console.log(`🔥 iwantrightclick ${frameInfo}: 최종병기 발동! JavaScript 중단 시작...`);
         
-        // 1. 모든 타이머와 인터벌 제거
-        let highestTimeoutId = setTimeout(';');
-        for (let i = 0; i < highestTimeoutId; i++) {
-            clearTimeout(i);
-            clearInterval(i);
+        // 0. 네이버 블로그 특별 처리
+        if (window.location.hostname.includes('naver')) {
+            naverBlogBypass();
         }
         
-        // 2. 모든 이벤트 리스너 무력화
+        // 1. 모든 타이머와 인터벌 제거 (더 강력하게)
+        const highestTimeoutId = setTimeout(function(){});
+        for (let i = 0; i < highestTimeoutId + 1000; i++) {
+            try {
+                clearTimeout(i);
+                clearInterval(i);
+            } catch(e) {}
+        }
+        
+        // 추가: requestAnimationFrame도 제거
+        const highestRAF = requestAnimationFrame(function(){});
+        for (let i = 0; i < highestRAF + 100; i++) {
+            try {
+                cancelAnimationFrame(i);
+            } catch(e) {}
+        }
+        
+        // 2. 모든 이벤트 리스너 무력화 (더 강력하게)
         const originalAddEventListener = EventTarget.prototype.addEventListener;
         const originalRemoveEventListener = EventTarget.prototype.removeEventListener;
         
         EventTarget.prototype.addEventListener = function() { return false; };
         EventTarget.prototype.removeEventListener = function() { return false; };
+        
+        // 기존 이벤트도 모두 제거
+        ['contextmenu', 'selectstart', 'dragstart', 'mousedown', 'mouseup', 'keydown', 'keyup', 'copy', 'cut', 'paste'].forEach(eventType => {
+            document.removeEventListener(eventType, function() {}, true);
+            document.removeEventListener(eventType, function() {}, false);
+            if (window.removeEventListener) {
+                window.removeEventListener(eventType, function() {}, true);
+                window.removeEventListener(eventType, function() {}, false);
+            }
+        });
         
         // 3. 모든 스크립트 태그 무력화
         const scripts = document.querySelectorAll('script');
@@ -186,11 +320,21 @@
             }
         });
         
-        // 4. MutationObserver 무력화
+        // 4. MutationObserver 무력화 (더 강력하게)
         const originalMutationObserver = window.MutationObserver;
         window.MutationObserver = function() {
             return { observe: function() {}, disconnect: function() {} };
         };
+        
+        // 기존 MutationObserver들도 무력화
+        if (window.MutationObserver) {
+            const oldObservers = document.querySelectorAll('*');
+            oldObservers.forEach(el => {
+                if (el._observers) {
+                    el._observers.forEach(obs => obs.disconnect());
+                }
+            });
+        }
         
         // 5. setTimeout/setInterval 무력화
         window.setTimeout = function(func, delay) {
@@ -245,6 +389,16 @@
         if (event.data && event.data.type === 'IWANTRIGHTCLICK_NUCLEAR' && event.data.source === 'iwantrightclick') {
             console.log(`${frameInfo}: 최종병기 명령 수신됨`);
             nuclearOption();
+        }
+        
+        // 네이버 전용 메시지 처리
+        if (event.data && event.data.type === 'NAVER_BYPASS') {
+            console.log(`${frameInfo}: 네이버 우회 명령 수신됨`);
+            try {
+                eval(event.data.code);
+            } catch(e) {
+                console.log('네이버 우회 코드 실행 실패:', e);
+            }
         }
     });
     
