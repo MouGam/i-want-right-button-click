@@ -1,0 +1,26 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- 배경 원 -->
+  <circle cx="64" cy="64" r="60" fill="#4285f4" stroke="#1a73e8" stroke-width="2"/>
+  
+  <!-- 마우스 모양 -->
+  <rect x="48" y="35" width="32" height="45" rx="16" ry="16" fill="white" stroke="#333" stroke-width="2"/>
+  
+  <!-- 마우스 버튼 구분선 -->
+  <line x1="64" y1="35" x2="64" y2="55" stroke="#333" stroke-width="1.5"/>
+  
+  <!-- 우클릭 강조 (우측 버튼) -->
+  <path d="M 64 35 Q 80 35 80 51 Q 80 55 78 55 L 64 55 Z" fill="#ff4444" opacity="0.8"/>
+  
+  <!-- 클릭 효과 원 -->
+  <circle cx="72" cy="45" r="8" fill="none" stroke="#ff4444" stroke-width="2" opacity="0.6"/>
+  <circle cx="72" cy="45" r="12" fill="none" stroke="#ff4444" stroke-width="1.5" opacity="0.4"/>
+  
+  <!-- 체크마크 (활성화 표시) -->
+  <path d="M 45 85 L 55 95 L 75 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- 금지 표시를 X로 변경 (방지 해제를 의미) -->
+  <g opacity="0.7">
+    <line x1="82" y1="82" x2="92" y2="92" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <line x1="92" y1="82" x2="82" y2="92" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
