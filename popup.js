@@ -52,41 +52,60 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // JS 완전 비활성화 버튼 클릭 이벤트
+    // 현재 탭의 JS 차단 상태 확인
+    let isJSDisabled = false;
+    
+    function updateJSButton(disabled) {
+        isJSDisabled = disabled;
+        if (disabled) {
+            disableJsButton.textContent = '✅ JS 차단 해제';
+            disableJsButton.style.background = '#4CAF50';
+        } else {
+            disableJsButton.textContent = '⚡ JS 완전 차단';
+            disableJsButton.style.background = '#9c27b0';
+        }
+    }
+    
+    // 페이지 로드 시 현재 상태 확인
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        if (tabs[0]) {
+            chrome.runtime.sendMessage({
+                action: 'getJSStatus',
+                tabId: tabs[0].id
+            }, function(response) {
+                updateJSButton(response && response.disabled);
+            });
+        }
+    });
+
+    // JS 차단/해제 토글 버튼 클릭 이벤트
     disableJsButton.addEventListener('click', function() {
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             if (tabs[0]) {
-                // 현재 탭에서 JavaScript 비활성화
-                chrome.scripting.executeScript({
-                    target: { tabId: tabs[0].id },
-                    func: function() {
-                        // 개발자도구에서 JS 비활성화와 같은 효과
-                        if (confirm('⚡ JavaScript를 완전히 비활성화합니다.\n페이지를 새로고침합니다. 계속하시겠습니까?')) {
-                            // 현재 페이지를 JavaScript 없이 다시 로드
-                            const currentUrl = window.location.href;
-                            window.stop(); // 현재 로딩 중단
-                            
-                            // JavaScript 실행 차단
-                            const meta = document.createElement('meta');
-                            meta.httpEquiv = 'Content-Security-Policy';
-                            meta.content = "script-src 'none';";
-                            document.head.insertBefore(meta, document.head.firstChild);
-                            
-                            // 페이지 새로고침
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 100);
-                        }
-                    }
-                });
+                const action = isJSDisabled ? 'enableJS' : 'disableJS';
+                const actionText = isJSDisabled ? '해제' : '차단';
                 
-                disableJsButton.textContent = '✅ JS 비활성화 완료';
                 disableJsButton.disabled = true;
+                disableJsButton.textContent = `⏳ JS ${actionText} 중...`;
                 
-                setTimeout(() => {
-                    disableJsButton.textContent = '⚡ JS 완전 비활성화';
+                chrome.runtime.sendMessage({
+                    action: action,
+                    tabId: tabs[0].id
+                }, function(response) {
+                    if (response && response.success) {
+                        updateJSButton(!isJSDisabled);
+                        
+                        if (!isJSDisabled) {
+                            // 차단 성공 시 페이지 새로고침
+                            chrome.tabs.reload(tabs[0].id);
+                        }
+                    } else {
+                        alert('JavaScript 차단/해제에 실패했습니다.');
+                        updateJSButton(isJSDisabled); // 원래 상태로 복원
+                    }
+                    
                     disableJsButton.disabled = false;
-                }, 3000);
+                });
             }
         });
     });
