@@ -92,15 +92,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     action: action,
                     tabId: tabs[0].id
                 }, function(response) {
+                    console.log('JS 차단/해제 응답:', response);
+                    
                     if (response && response.success) {
                         updateJSButton(!isJSDisabled);
                         
-                        if (!isJSDisabled) {
-                            // 차단 성공 시 페이지 새로고침
-                            chrome.tabs.reload(tabs[0].id);
-                        }
+                        // 차단/해제 모두 background.js에서 자동 새로고침됨
                     } else {
-                        alert('JavaScript 차단/해제에 실패했습니다.');
+                        console.error('JavaScript 차단/해제 실패');
+                        alert(`JavaScript 차단/해제에 실패했습니다.\n\n해결 방법:\n1. 확장 프로그램 재시작\n2. Chrome 재시작\n3. chrome://extensions/에서 권한 확인`);
                         updateJSButton(isJSDisabled); // 원래 상태로 복원
                     }
                     
