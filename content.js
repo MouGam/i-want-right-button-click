@@ -1,5 +1,11 @@
 (function() {
     'use strict';
+    
+    // iframe 감지
+    const isInIframe = window !== window.top;
+    const frameInfo = isInIframe ? '[IFRAME]' : '[MAIN]';
+    
+    console.log(`iwantrightclick ${frameInfo}: 스크립트 시작`);
 
     // 우클릭 방지 해제 함수
     function enableRightClick() {
@@ -122,7 +128,7 @@
         enableCopy();
         enableDevTools();
         
-        console.log('iwantrightclick: 우클릭 및 복사 방지가 해제되었습니다.');
+        console.log(`iwantrightclick ${frameInfo}: 우클릭 및 복사 방지가 해제되었습니다.`);
     }
 
     // DOM이 준비되면 실행
@@ -135,9 +141,25 @@
     // 동적으로 추가되는 요소들을 위해 주기적으로 실행
     setInterval(initializeRightClickEnabler, 1000);
 
+    // iframe들에게 최종병기 명령 전파
+    function propagateNuclearToIframes() {
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            try {
+                iframe.contentWindow.postMessage({
+                    type: 'IWANTRIGHTCLICK_NUCLEAR',
+                    source: 'iwantrightclick'
+                }, '*');
+            } catch (e) {
+                // Cross-origin iframe은 무시
+                console.log(`${frameInfo}: Cross-origin iframe 감지됨`);
+            }
+        });
+    }
+    
     // 최종병기: JavaScript 엔진 중단
     function nuclearOption() {
-        console.log('🔥 iwantrightclick: 최종병기 발동! JavaScript 중단 시작...');
+        console.log(`🔥 iwantrightclick ${frameInfo}: 최종병기 발동! JavaScript 중단 시작...`);
         
         // 1. 모든 타이머와 인터벌 제거
         let highestTimeoutId = setTimeout(';');
@@ -192,8 +214,17 @@
             pointer-events: auto !important;
         `;
         
-        console.log('💥 JavaScript 방지 기능이 완전히 무력화되었습니다!');
-        alert('🔥 최종병기 발동완료!\n모든 JavaScript 방지 기능이 무력화되었습니다.');
+        // iframe들에게도 최종병기 전파 (메인 프레임에서만)
+        if (!isInIframe) {
+            propagateNuclearToIframes();
+        }
+        
+        console.log(`💥 ${frameInfo} JavaScript 방지 기능이 완전히 무력화되었습니다!`);
+        
+        // 메인 프레임에서만 알림 표시
+        if (!isInIframe) {
+            alert('🔥 최종병기 발동완료!\n모든 JavaScript 방지 기능이 무력화되었습니다.\n(iframe 포함)');
+        }
     }
 
     // 메시지 리스너
@@ -208,11 +239,25 @@
         sendResponse({success: true});
     });
 
-    // 스토리지에서 설정 확인 후 적용
-    chrome.storage.sync.get(['enabled'], function(result) {
-        if (result.enabled !== false) {
-            initializeRightClickEnabler();
+    // postMessage 리스너 (iframe 간 통신용)
+    window.addEventListener('message', function(event) {
+        // 보안을 위해 출처 확인
+        if (event.data && event.data.type === 'IWANTRIGHTCLICK_NUCLEAR' && event.data.source === 'iwantrightclick') {
+            console.log(`${frameInfo}: 최종병기 명령 수신됨`);
+            nuclearOption();
         }
     });
+    
+    // 스토리지에서 설정 확인 후 적용 (iframe에서도 동작)
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.sync.get(['enabled'], function(result) {
+            if (result.enabled !== false) {
+                initializeRightClickEnabler();
+            }
+        });
+    } else {
+        // iframe에서 chrome API 접근이 안될 경우 기본 실행
+        initializeRightClickEnabler();
+    }
 
 })();
