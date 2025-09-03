@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusElement = document.getElementById('status');
     const statusText = document.getElementById('statusText');
     const toggleButton = document.getElementById('toggleButton');
+    const nuclearButton = document.getElementById('nuclearButton');
 
     // 현재 상태 로드
     chrome.storage.sync.get(['enabled'], function(result) {
@@ -27,6 +28,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             });
+        });
+    });
+
+    // 최종병기 버튼 클릭 이벤트
+    nuclearButton.addEventListener('click', function() {
+        nuclearButton.disabled = true;
+        nuclearButton.textContent = '🚫 JS 중단 중...';
+        
+        // 현재 탭에 최종병기 메시지 전송
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    action: 'nuclear'
+                }, function() {
+                    setTimeout(() => {
+                        nuclearButton.disabled = false;
+                        nuclearButton.textContent = '🔥 최종병기: JS 중단';
+                    }, 2000);
+                });
+            }
         });
     });
 
